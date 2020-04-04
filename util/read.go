@@ -1,4 +1,4 @@
-package operatefile
+package util
 
 import (
 	"fmt"
@@ -8,19 +8,11 @@ import (
 
 // ReadText 从文件读取内容
 func ReadText(filePath string) string {
-	inputFile, err := os.Open(filePath)
+
+	fileContent, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "os.Open() failed.")
-		return ""
+		fmt.Fprintf(os.Stderr, "ioutil.ReadFile() : %s\n", err)
 	}
 
-	defer inputFile.Close()
-
-	text, err := ioutil.ReadAll(inputFile)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "ioutil.ReadAll() failed.")
-		return ""
-	}
-
-	return string(text)
+	return string(fileContent)
 }
