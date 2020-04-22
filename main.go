@@ -1,9 +1,7 @@
 package main
 
-import (
-	"DiscreteMemorylessSourceCoding/huffman"
-)
+import "DiscreteMemorylessSourceCoding/huffman"
 
 func main() {
-	huffman.EncodeHandler()
+	huffman.EncodeHandler("files/test2.txt")
 }

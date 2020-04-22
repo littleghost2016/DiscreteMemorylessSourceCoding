@@ -4,104 +4,141 @@ import (
 	"DiscreteMemorylessSourceCoding/util"
 	"fmt"
 	"os"
-	"sort"
+	"strings"
 )
 
 // EncodeHandler huffman编码处理
 func EncodeHandler(filePath string) {
 
 	// 读取文件
-	text := util.ReadText(filePath)
-	if len(text) == 0 {
+	textByteSlice := util.ReadText(filePath)
+	if len(textByteSlice) == 0 {
 		fmt.Println("There is no character in text!")
 		os.Exit(1)
 	}
 
 	// 统计字符出现次数
-	characterFrequencyMap := util.CountCharacter(text)
+	characterFrequencyMap := util.CountCharacterFromText(textByteSlice)
 
 	// 生成霍夫曼树节点
-	treeNodeMap := generateHuffmanTreeNode(characterFrequencyMap)
+	treeNodeMap := GenerateHuffmanTreeNode(characterFrequencyMap)
 
 	// 生成霍夫曼树
-	generateHuffmanTree(treeNodeMap)
+	GenerateHuffmanTree(treeNodeMap)
 
-	printEncodeResult(text, treeNodeMap)
+	// 仅做测试用
+	PrintTreeMap(treeNodeMap)
+
+	// bitChannel := make(chan bool, 32)
+
+	// 此处用[]byte想为以后可能的编码非ASCII码做准备
+	// 如只用做ASCII编码，[]byte可改为byte
+	// 是否可以不改而直接适应非ASCII编码还未测试
+	byteSliceChannel := make(chan []byte, 8)
+
+	// 写二进制文件
+	go writeBinaryFile(treeNodeMap, characterFrequencyMap, textByteSlice, byteSliceChannel)
+
+	// encodeTextFromTreeNodeMap(textByteSlice, treeNodeMap, bitChannel)
+
+	// paddingLength := util.ConvertCodeStringToCodeByte(bitChannel, byteSliceChannel)
+
+	binaryFileName := fmt.Sprintf("%s.bin", strings.Split(filePath, ".")[0])
+	fmt.Println(binaryFileName)
+	util.WriteCodeToBinaryFile(binaryFileName, byteSliceChannel)
+
+	// printEncodeResult(text, treeNodeMap)
 }
 
-// 生成节点
-func generateHuffmanTreeNode(characterFrequencyMap map[rune]int) (treeNodeMap map[rune]*TreeNode) {
-	treeNodeMap = make(map[rune]*TreeNode)
-	for k, v := range characterFrequencyMap {
-		if _, ok := treeNodeMap[k]; !ok {
-			treeNodeMap[k] = &TreeNode{Character: k, Weight: v, FNode: nil, LNode: nil, RNode: nil, Code: ""}
+func encodeTextFromTreeNodeMap(text []byte, tnm map[byte]*TreeNode, bc chan<- bool) {
+
+	for _, eachCharacher := range text {
+		for _, eachCharacter := range tnm[eachCharacher].Code {
+			// fmt.Printf("%T  %v\n", eachCharacter, eachCharacter)
+			if eachCharacter == rune(48) {
+				bc <- false
+			} else if eachCharacter == rune(49) {
+				bc <- true
+			} else {
+				fmt.Println("There is a wrong code that isn't 0 or isn't 1!")
+				os.Exit(1)
+			}
 		}
 	}
+	close(bc)
+}
+
+func writeBinaryFile(tnm map[byte]*TreeNode, cfm map[byte]int, tbs []byte, bsc chan<- []byte) {
+
+	// 0: huffman
+	writeFlag(0, bsc)
+
+	writeCodeNumber(tnm, bsc)
+	writeCodeMap(cfm, bsc)
+	paddingLength := calculatePaddingLength(tnm, cfm)
+	writePaddingLength(paddingLength, bsc)
+	writeCode(tbs, tnm, bsc, paddingLength)
+	close(bsc)
+}
+
+// 写二进制文件标志
+func writeFlag(encodeType uint8, bsc chan<- []byte) {
+	bsc <- []byte{0x19, 0x15}
+	// 上面这一句也可以写成如下，因为[]byte的初始化需要byte类型，而Go中uint8和byte是一样的。
+	// 需要注意：Go中int8与byte不一样，因为int8的取值范围为-128~127
+	// bsc <- []byte{uint8(0x19), uint8(0x15)}
+	// 但不可以写成这样，会提示无法将int转化为byte
+	// flag19 := 0x19
+	// flag15 := 0x15
+	// bsc <- []byte{flag19, flag15}
+
+	switch encodeType {
+	case 0:
+		// huffman编码
+		bsc <- []byte{0x00}
+	case 1:
+		// 算术编码
+		bsc <- []byte{0x01}
+	case 2:
+		// LZ编码
+		bsc <- []byte{0x02}
+	}
+}
+
+func writeCodeNumber(tnm map[byte]*TreeNode, bsc chan<- []byte) {
+	codeNumber := uint8(len(tnm)) // 类型转换原因同上
+
+	bsc <- []byte{codeNumber}
+}
+
+func writeCodeMap(cfm map[byte]int, bsc chan<- []byte) {
+
+	for k, v := range cfm {
+		bsc <- []byte{k}
+		bsc <- util.CounvertUint32ToByteSlice(uint32(v))
+	}
+}
+
+func calculatePaddingLength(tnm map[byte]*TreeNode, cfm map[byte]int) (paddingLength uint8) {
+	// paddingLength能用出现的频数和编码长度算出来
+	var lastByteValidCodeLength uint8
+	for k, v := range cfm {
+		lastByteValidCodeLength += uint8(len(tnm[k].Code) * v)
+	}
+	paddingLength = 8 - (lastByteValidCodeLength % 8)
 	return
 }
 
-func generateHuffmanTree(treeNodeMap map[rune]*TreeNode) {
-	tns := treeNodeMapToTreeNodeSlice(treeNodeMap)
-	// 排序，当排序完成后，出现次数小的在前面
-	sort.Sort(TreeNodeSlice(tns))
-
-	if len(tns) == 1 {
-		panic("There is none in TreeNodeSlice!")
-	}
-
-	for len(tns) != 1 {
-		tempNode := TreeNode{Character: 0, Weight: tns[0].Weight + tns[1].Weight, LNode: tns[0], RNode: tns[1], FNode: nil, Code: ""}
-		tns[0].FNode = &tempNode
-		tns[1].FNode = tns[0].FNode
-		tns = append(tns[2:], &tempNode)
-		sort.Sort(TreeNodeSlice(tns))
-	}
-
-	rootNode := tns[0]
-	distributeCode(rootNode)
-
-	return
+func writePaddingLength(pl uint8, bsc chan<- []byte) {
+	bsc <- []byte{pl}
 }
 
-// 使用sort.Sort()需要实现以下三个函数: Len() Less() Swap
-// 长度
-func (tn TreeNodeSlice) Len() int {
-	return len(tn)
-}
-
-// 默认从小到大排序，因此此处函数名为Less
-func (tn TreeNodeSlice) Less(i, j int) bool {
-	return tn[i].Weight < tn[j].Weight
-}
-
-// 交换函数
-func (tn TreeNodeSlice) Swap(i, j int) {
-	tn[i], tn[j] = tn[j], tn[i]
-}
-
-// map转slice
-func treeNodeMapToTreeNodeSlice(tnm map[rune]*TreeNode) (trs []*TreeNode) {
-	trs = make(TreeNodeSlice, 0)
-	for _, v := range tnm {
-		trs = append(trs, v)
-	}
-	return
-}
-
-func distributeCode(node *TreeNode) {
-	if node.LNode != nil {
-		node.LNode.Code = fmt.Sprintf("%s%d", node.Code, 0)
-		distributeCode(node.LNode)
-	}
-	if node.RNode != nil {
-		node.RNode.Code = fmt.Sprintf("%s%d", node.Code, 1)
-		distributeCode(node.RNode)
-	}
-	return
-}
-
-func printEncodeResult(text string, tnm map[rune]*TreeNode) {
-	for _, eachCharacher := range text {
-		fmt.Print(tnm[eachCharacher].Code)
+func writeCode(tbs []byte, tnm map[byte]*TreeNode, bsc chan<- []byte, calculatedPaddingLength uint8) {
+	bitChannel := make(chan bool, 32)
+	go encodeTextFromTreeNodeMap(tbs, tnm, bitChannel)
+	operatedPaddingLength := util.ConvertCodeStringToCodeByte(bitChannel, bsc)
+	if calculatedPaddingLength != operatedPaddingLength {
+		fmt.Println(calculatedPaddingLength, operatedPaddingLength)
+		fmt.Println("calculatePaddingLength != operatedPaddingLength")
 	}
 }
