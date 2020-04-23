@@ -3,15 +3,13 @@ package huffman
 import (
 	"DiscreteMemorylessSourceCoding/util"
 	"fmt"
+	"math"
 	"os"
-	"strings"
 )
 
 // EncodeHandler huffman编码处理
-func EncodeHandler(filePath string) {
+func EncodeHandler(filePath string, textByteSlice []byte) {
 
-	// 读取文件
-	textByteSlice := util.ReadText(filePath)
 	if len(textByteSlice) == 0 {
 		fmt.Println("There is no character in text!")
 		os.Exit(1)
@@ -29,25 +27,19 @@ func EncodeHandler(filePath string) {
 	// 仅做测试用
 	PrintTreeMap(treeNodeMap)
 
-	// bitChannel := make(chan bool, 32)
-
 	// 此处用[]byte想为以后可能的编码非ASCII码做准备
 	// 如只用做ASCII编码，[]byte可改为byte
 	// 是否可以不改而直接适应非ASCII编码还未测试
-	byteSliceChannel := make(chan []byte, 8)
+	byteSliceChannel := make(chan []byte, 64)
 
 	// 写二进制文件
 	go writeBinaryFile(treeNodeMap, characterFrequencyMap, textByteSlice, byteSliceChannel)
 
-	// encodeTextFromTreeNodeMap(textByteSlice, treeNodeMap, bitChannel)
-
-	// paddingLength := util.ConvertCodeStringToCodeByte(bitChannel, byteSliceChannel)
-
-	binaryFileName := fmt.Sprintf("%s.bin", strings.Split(filePath, ".")[0])
+	// binaryFileName := fmt.Sprintf("%s.bin", strings.Split(filePath, ".")[0])
+	binaryFileName := fmt.Sprintf("%s.bin", filePath)
 	fmt.Println(binaryFileName)
-	util.WriteCodeToBinaryFile(binaryFileName, byteSliceChannel)
+	util.WriteToFile(binaryFileName, byteSliceChannel)
 
-	// printEncodeResult(text, treeNodeMap)
 }
 
 func encodeTextFromTreeNodeMap(text []byte, tnm map[byte]*TreeNode, bc chan<- bool) {
@@ -68,7 +60,7 @@ func encodeTextFromTreeNodeMap(text []byte, tnm map[byte]*TreeNode, bc chan<- bo
 	close(bc)
 }
 
-func writeBinaryFile(tnm map[byte]*TreeNode, cfm map[byte]int, tbs []byte, bsc chan<- []byte) {
+func writeBinaryFile(tnm map[byte]*TreeNode, cfm map[byte]uint32, tbs []byte, bsc chan<- []byte) {
 
 	// 0: huffman
 	writeFlag(0, bsc)
@@ -111,7 +103,7 @@ func writeCodeNumber(tnm map[byte]*TreeNode, bsc chan<- []byte) {
 	bsc <- []byte{codeNumber}
 }
 
-func writeCodeMap(cfm map[byte]int, bsc chan<- []byte) {
+func writeCodeMap(cfm map[byte]uint32, bsc chan<- []byte) {
 
 	for k, v := range cfm {
 		bsc <- []byte{k}
@@ -119,11 +111,11 @@ func writeCodeMap(cfm map[byte]int, bsc chan<- []byte) {
 	}
 }
 
-func calculatePaddingLength(tnm map[byte]*TreeNode, cfm map[byte]int) (paddingLength uint8) {
+func calculatePaddingLength(tnm map[byte]*TreeNode, cfm map[byte]uint32) (paddingLength uint8) {
 	// paddingLength能用出现的频数和编码长度算出来
 	var lastByteValidCodeLength uint8
 	for k, v := range cfm {
-		lastByteValidCodeLength += uint8(len(tnm[k].Code) * v)
+		lastByteValidCodeLength += uint8(len(tnm[k].Code) * int(v))
 	}
 	paddingLength = 8 - (lastByteValidCodeLength % 8)
 	return
@@ -134,7 +126,7 @@ func writePaddingLength(pl uint8, bsc chan<- []byte) {
 }
 
 func writeCode(tbs []byte, tnm map[byte]*TreeNode, bsc chan<- []byte, calculatedPaddingLength uint8) {
-	bitChannel := make(chan bool, 32)
+	bitChannel := make(chan bool, int(math.Pow(2, 32)))
 	go encodeTextFromTreeNodeMap(tbs, tnm, bitChannel)
 	operatedPaddingLength := util.ConvertCodeStringToCodeByte(bitChannel, bsc)
 	if calculatedPaddingLength != operatedPaddingLength {

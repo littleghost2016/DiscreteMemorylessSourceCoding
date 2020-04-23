@@ -6,7 +6,7 @@ import (
 )
 
 // GenerateHuffmanTreeNode 生成节点
-func GenerateHuffmanTreeNode(characterFrequencyMap map[byte]int) (treeNodeMap map[byte]*TreeNode) {
+func GenerateHuffmanTreeNode(characterFrequencyMap map[byte]uint32) (treeNodeMap map[byte]*TreeNode) {
 	treeNodeMap = make(map[byte]*TreeNode)
 	for k, v := range characterFrequencyMap {
 		if _, ok := treeNodeMap[k]; !ok {

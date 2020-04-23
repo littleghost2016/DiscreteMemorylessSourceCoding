@@ -31,12 +31,14 @@ func ConvertCodeStringToCodeByte(bc <-chan bool, bsc chan<- []byte) (paddingLeng
 				}
 				bsc <- []byte{*tempBytePointer}
 			}
-			// close(bsc)
 			break
 		}
 	}
-	// paddingLength = 8 - paddingLength
 	return
+}
+
+// TODO
+func ConvertCodeByteToCodeString() {
 }
 
 // CounvertUint32ToByteSlice ...
@@ -47,4 +49,12 @@ func CounvertUint32ToByteSlice(in uint32) (out []byte) {
 		out = append(out, eachByte)
 	}
 	return
+}
+
+// Couvert4ByteArrayToUint32 ...
+func Couvert4ByteArrayToUint32(in [4]byte) (out uint32) {
+	for i := uint8(0); i < 4; i++ {
+		out = uint32(in[i]) << ((3 - i) * 8)
+	}
+	return out
 }
