@@ -8,9 +8,9 @@ import (
 // func WriteFlagToBinaryFile()
 
 // WriteCodeToBinaryFile ...
-func WriteCodeToBinaryFile(fileName string, bsc <-chan []byte) {
+func WriteToFile(filePath string, bsc <-chan []byte) {
 
-	fileObject, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE, 0644)
+	fileObject, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		fmt.Println(err, "WriteEncodedBinaryFile function failed.")
 	}
