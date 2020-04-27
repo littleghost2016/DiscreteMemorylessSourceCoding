@@ -6,18 +6,18 @@ import (
 )
 
 // GenerateHuffmanTreeNode 生成节点
-func GenerateHuffmanTreeNode(characterFrequencyMap map[byte]int) (treeNodeMap map[byte]*TreeNode) {
+func GenerateHuffmanTreeNode(characterFrequencyMap map[byte]uint32) (treeNodeMap map[byte]*TreeNode) {
 	treeNodeMap = make(map[byte]*TreeNode)
 	for k, v := range characterFrequencyMap {
 		if _, ok := treeNodeMap[k]; !ok {
 			treeNodeMap[k] = &TreeNode{
-				Character: k,
-				Weight:    v,
-				FNode:     nil,
-				LNode:     nil,
-				RNode:     nil,
-				Code:      "",
-				LeafNode:  true,
+				Character:  k,
+				Weight:     v,
+				FNode:      nil,
+				LNode:      nil,
+				RNode:      nil,
+				Code:       "",
+				IsLeafNode: true,
 			}
 		}
 	}
@@ -25,7 +25,7 @@ func GenerateHuffmanTreeNode(characterFrequencyMap map[byte]int) (treeNodeMap ma
 }
 
 // GenerateHuffmanTree 生成（动词）树
-func GenerateHuffmanTree(treeNodeMap map[byte]*TreeNode) {
+func GenerateHuffmanTree(treeNodeMap map[byte]*TreeNode) (rootNode *TreeNode) {
 
 	// 验证：map是无序的
 	// for k, v := range treeNodeMap {
@@ -37,9 +37,9 @@ func GenerateHuffmanTree(treeNodeMap map[byte]*TreeNode) {
 	// 出现次数相同时，ASCII码小的排在前面
 	sort.Sort(TreeNodeSlice(tns))
 
-	for _, each := range tns {
-		fmt.Println(*each)
-	}
+	// for _, each := range tns {
+	// 	fmt.Println(*each)
+	// }
 
 	if len(tns) == 1 {
 		panic("There is none in TreeNodeSlice!")
@@ -47,13 +47,13 @@ func GenerateHuffmanTree(treeNodeMap map[byte]*TreeNode) {
 
 	for len(tns) != 1 {
 		tempNode := TreeNode{
-			Character: 0,
-			Weight:    tns[0].Weight + tns[1].Weight,
-			LNode:     tns[0],
-			RNode:     tns[1],
-			FNode:     nil,
-			Code:      "",
-			LeafNode:  false,
+			Character:  0,
+			Weight:     tns[0].Weight + tns[1].Weight,
+			LNode:      tns[0],
+			RNode:      tns[1],
+			FNode:      nil,
+			Code:       "",
+			IsLeafNode: false,
 		}
 		tns[0].FNode = &tempNode
 		tns[1].FNode = tns[0].FNode
@@ -66,7 +66,7 @@ func GenerateHuffmanTree(treeNodeMap map[byte]*TreeNode) {
 	//  fmt.Println(*each)
 	// }
 
-	rootNode := tns[0]
+	rootNode = tns[0]
 	distributeCode(rootNode)
 
 	return
