@@ -3,22 +3,24 @@ package huffman
 import (
 	"DiscreteMemorylessSourceCoding/util"
 	"fmt"
+	"math"
 )
 
 // DecodeHandler ...
-func DecodeHandler(fileContent []byte) {
+func DecodeHandler(filePath string, fileContent []byte) {
 
-	byteChannel := make(chan byte, 1024)
+	byteChannelFromBinaryFile := make(chan byte, 1024)
 
 	// 读取文件
-	go func(byteChannel chan<- byte) {
+	go func(byteChannelFromBinaryFile chan<- byte) {
 		for _, eachByte := range fileContent {
-			byteChannel <- eachByte
+			byteChannelFromBinaryFile <- eachByte
 		}
-	}(byteChannel)
+		close(byteChannelFromBinaryFile)
+	}(byteChannelFromBinaryFile)
 
-	codeNumber := util.ReadCodeNumber(byteChannel)
-	characterFrequencyMap := readCodeFrequencyAndGenerateCharacterFrequencyMap(codeNumber, byteChannel)
+	codeNumber := util.ReadCodeNumber(byteChannelFromBinaryFile)
+	characterFrequencyMap := readCodeFrequencyAndGenerateCharacterFrequencyMap(codeNumber, byteChannelFromBinaryFile)
 
 	// 测试characterFrequencyMap
 	// for k, v := range characterFrequencyMap {
@@ -28,18 +30,24 @@ func DecodeHandler(fileContent []byte) {
 	// 生成霍夫曼树节点
 	treeNodeMap := GenerateHuffmanTreeNode(characterFrequencyMap)
 	// 生成霍夫曼树
-	GenerateHuffmanTree(treeNodeMap)
+	rootNode := GenerateHuffmanTree(treeNodeMap)
 
 	// 仅做测试用
-	PrintTreeMap(treeNodeMap)
+	// PrintTreeMap(treeNodeMap)
 
-	paddingLength := util.ReadPaddingLength(byteChannel)
+	paddingLength := util.ReadPaddingLength(byteChannelFromBinaryFile)
 	fmt.Println("paddingLength", paddingLength)
 
-	writeByteChannel := make(chan byte, 1024)
+	bitChannel := make(chan bool, int(math.Pow(2, 32)))
 
-	// util.ConvertCodeByteToCodeString(paddingLength, byteChannel, writeByteChannel)
-	util.ConvertCodeByteToCodeString()
+	util.ConvertCodeByteToCodeBit(paddingLength, byteChannelFromBinaryFile, bitChannel)
+
+	byteChannelToTextFile := make(chan byte, 1024)
+
+	go decodeTextFromTreeNodeMap(rootNode, bitChannel, byteChannelToTextFile)
+
+	fmt.Println("filePath", filePath)
+	util.WriteByteToFile(filePath, byteChannelToTextFile)
 
 }
 
@@ -58,4 +66,21 @@ func readCodeFrequencyAndGenerateCharacterFrequencyMap(codeNumber uint8, byteCha
 		cfm[character] = frequencyInt
 	}
 	return
+}
+
+func decodeTextFromTreeNodeMap(rootNode *TreeNode, bitChannel <-chan bool, byteChannel chan<- byte) {
+	currentNode := rootNode
+	for each := range bitChannel {
+		if each == false {
+			currentNode = currentNode.LNode
+		} else {
+			currentNode = currentNode.RNode
+		}
+		if currentNode.IsLeafNode {
+			byteChannel <- currentNode.Character
+			// fmt.Println(currentNode.Character)
+			currentNode = rootNode
+		}
+	}
+	close(byteChannel)
 }

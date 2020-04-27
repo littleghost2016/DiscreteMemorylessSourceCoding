@@ -25,20 +25,19 @@ func EncodeHandler(filePath string, textByteSlice []byte) {
 	GenerateHuffmanTree(treeNodeMap)
 
 	// 仅做测试用
-	PrintTreeMap(treeNodeMap)
+	// PrintTreeMap(treeNodeMap)
 
 	// 此处用[]byte想为以后可能的编码非ASCII码做准备
 	// 如只用做ASCII编码，[]byte可改为byte
 	// 是否可以不改而直接适应非ASCII编码还未测试
-	byteSliceChannel := make(chan []byte, 64)
+	byteChannelToFile := make(chan byte, 64)
 
 	// 写二进制文件
-	go writeBinaryFile(treeNodeMap, characterFrequencyMap, textByteSlice, byteSliceChannel)
+	go writeBinaryFile(treeNodeMap, characterFrequencyMap, textByteSlice, byteChannelToFile)
 
-	// binaryFileName := fmt.Sprintf("%s.bin", strings.Split(filePath, ".")[0])
 	binaryFileName := fmt.Sprintf("%s.bin", filePath)
-	fmt.Println(binaryFileName)
-	util.WriteToFile(binaryFileName, byteSliceChannel)
+	fmt.Println("binaryFileName", binaryFileName)
+	util.WriteByteToFile(binaryFileName, byteChannelToFile)
 
 }
 
@@ -60,54 +59,26 @@ func encodeTextFromTreeNodeMap(text []byte, tnm map[byte]*TreeNode, bc chan<- bo
 	close(bc)
 }
 
-func writeBinaryFile(tnm map[byte]*TreeNode, cfm map[byte]uint32, tbs []byte, bsc chan<- []byte) {
+func writeBinaryFile(tnm map[byte]*TreeNode, cfm map[byte]uint32, tbs []byte, byteChannelToFile chan<- byte) {
 
 	// 0: huffman
-	writeFlag(0, bsc)
+	util.WriteFlag(0, byteChannelToFile)
 
-	writeCodeNumber(tnm, bsc)
-	writeCodeMap(cfm, bsc)
+	writeCodeNumber(tnm, byteChannelToFile)
+	writeCodeMap(cfm, byteChannelToFile)
 	paddingLength := calculatePaddingLength(tnm, cfm)
-	writePaddingLength(paddingLength, bsc)
-	writeCode(tbs, tnm, bsc, paddingLength)
-	close(bsc)
+	util.WritePaddingLength(paddingLength, byteChannelToFile)
+	writeCode(tbs, tnm, byteChannelToFile, paddingLength)
 }
 
-// 写二进制文件标志
-func writeFlag(encodeType uint8, bsc chan<- []byte) {
-	bsc <- []byte{0x19, 0x15}
-	// 上面这一句也可以写成如下，因为[]byte的初始化需要byte类型，而Go中uint8和byte是一样的。
-	// 需要注意：Go中int8与byte不一样，因为int8的取值范围为-128~127
-	// bsc <- []byte{uint8(0x19), uint8(0x15)}
-	// 但不可以写成这样，会提示无法将int转化为byte
-	// flag19 := 0x19
-	// flag15 := 0x15
-	// bsc <- []byte{flag19, flag15}
-
-	switch encodeType {
-	case 0:
-		// huffman编码
-		bsc <- []byte{0x00}
-	case 1:
-		// 算术编码
-		bsc <- []byte{0x01}
-	case 2:
-		// LZ编码
-		bsc <- []byte{0x02}
-	}
-}
-
-func writeCodeNumber(tnm map[byte]*TreeNode, bsc chan<- []byte) {
-	codeNumber := uint8(len(tnm)) // 类型转换原因同上
-
-	bsc <- []byte{codeNumber}
-}
-
-func writeCodeMap(cfm map[byte]uint32, bsc chan<- []byte) {
+func writeCodeMap(cfm map[byte]uint32, byteChannelToFile chan<- byte) {
 
 	for k, v := range cfm {
-		bsc <- []byte{k}
-		bsc <- util.CounvertUint32ToByteSlice(uint32(v))
+		byteChannelToFile <- k
+		temp4byteArray := util.CounvertUint32ToByteSlice(uint32(v))
+		for i := 0; i < 4; i++ {
+			byteChannelToFile <- temp4byteArray[i]
+		}
 	}
 }
 
@@ -117,18 +88,20 @@ func calculatePaddingLength(tnm map[byte]*TreeNode, cfm map[byte]uint32) (paddin
 	for k, v := range cfm {
 		lastByteValidCodeLength += uint8(len(tnm[k].Code) * int(v))
 	}
-	paddingLength = 8 - (lastByteValidCodeLength % 8)
+	paddingLength = (8 - (lastByteValidCodeLength % 8)) % 8
 	return
 }
 
-func writePaddingLength(pl uint8, bsc chan<- []byte) {
-	bsc <- []byte{pl}
+func writeCodeNumber(tnm map[byte]*TreeNode, byteChannelToFile chan<- byte) {
+	codeNumber := uint8(len(tnm)) // 类型转换原因同上
+
+	byteChannelToFile <- codeNumber
 }
 
-func writeCode(tbs []byte, tnm map[byte]*TreeNode, bsc chan<- []byte, calculatedPaddingLength uint8) {
+func writeCode(tbs []byte, tnm map[byte]*TreeNode, byteChannelToFile chan<- byte, calculatedPaddingLength uint8) {
 	bitChannel := make(chan bool, int(math.Pow(2, 32)))
 	go encodeTextFromTreeNodeMap(tbs, tnm, bitChannel)
-	operatedPaddingLength := util.ConvertCodeStringToCodeByte(bitChannel, bsc)
+	operatedPaddingLength := util.ConvertCodeStringToCodeByte(bitChannel, byteChannelToFile)
 	if calculatedPaddingLength != operatedPaddingLength {
 		fmt.Println(calculatedPaddingLength, operatedPaddingLength)
 		fmt.Println("calculatePaddingLength != operatedPaddingLength")

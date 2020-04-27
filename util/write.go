@@ -1,14 +1,13 @@
 package util
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 )
 
-// func WriteFlagToBinaryFile()
-
-// WriteCodeToBinaryFile ...
-func WriteToFile(filePath string, bsc <-chan []byte) {
+// WriteByteToFile ...
+func WriteByteToFile(filePath string, byteChannel <-chan byte) {
 
 	fileObject, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
@@ -18,19 +17,34 @@ func WriteToFile(filePath string, bsc <-chan []byte) {
 	defer fileObject.Close()
 
 	// 使用buffer时
-	// binBuffer := new(bytes.Buffer)
+	binBuffer := new(bytes.Buffer)
 
-	for eachByteSlice := range bsc {
+	for eachByteSlice := range byteChannel {
 		// fmt.Println(eachByteSlice)
-		fileObject.Write(eachByteSlice)
+		binBuffer.WriteByte(eachByteSlice)
 	}
+	fileObject.Write(binBuffer.Bytes())
+}
 
-	// 使用buffer时
-	// //使用Write方法,需要使用Writer对象的Flush方法将buffer中的数据刷到磁盘
-	// for eachByteSlice := range bsc {
-	//  fmt.Println(eachByteSlice)
-	//  binary.Write(binBuffer, binary.BigEndian, eachByteSlice)
-	//  fileObject.Write(binBuffer.Bytes())
-	//  binBuffer.Reset()
-	// }
+// 写二进制文件标志
+func WriteFlag(encodeType uint8, byteChannelToFile chan<- byte) {
+
+	byteChannelToFile <- 0x19
+	byteChannelToFile <- 0x15
+
+	switch encodeType {
+	case 0:
+		// huffman编码
+		byteChannelToFile <- 0x00
+	case 1:
+		// 算术编码
+		byteChannelToFile <- 0x01
+	case 2:
+		// LZ编码
+		byteChannelToFile <- 0x02
+	}
+}
+
+func WritePaddingLength(pl uint8, byteChannelToFile chan<- byte) {
+	byteChannelToFile <- pl
 }

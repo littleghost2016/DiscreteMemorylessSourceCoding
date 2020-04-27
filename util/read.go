@@ -24,11 +24,11 @@ func ReadFlag(flag2Array []byte) (flagExist bool) {
 	var byte15 uint8 = 0x15
 
 	if flag2Array[0] != byte19 {
-		fmt.Fprintf(os.Stderr, "The first byte is not 0x19. This file may not been encoded by my tools.")
+		fmt.Fprintf(os.Stderr, "The first byte is not 0x19. This file may not been encoded by my tools.\n")
 		return false
 	}
 	if flag2Array[1] != byte15 {
-		fmt.Fprintf(os.Stderr, "The second byte is not 0x15. This file may not been encoded by my tools.")
+		fmt.Fprintf(os.Stderr, "The second byte is not 0x15. This file may not been encoded by my tools.\n")
 		return false
 	}
 	return true
