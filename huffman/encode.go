@@ -99,7 +99,7 @@ func writeCodeNumber(tnm map[byte]*TreeNode, byteChannelToFile chan<- byte) {
 }
 
 func writeCode(tbs []byte, tnm map[byte]*TreeNode, byteChannelToFile chan<- byte, calculatedPaddingLength uint8) {
-	bitChannel := make(chan bool, int(math.Pow(2, 32)))
+	bitChannel := make(chan bool, int(math.Pow(2, 16)))
 	go encodeTextFromTreeNodeMap(tbs, tnm, bitChannel)
 	operatedPaddingLength := util.ConvertCodeStringToCodeByte(bitChannel, byteChannelToFile)
 	if calculatedPaddingLength != operatedPaddingLength {

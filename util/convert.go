@@ -1,5 +1,9 @@
 package util
 
+import (
+	"fmt"
+)
+
 // ConvertCodeStringToCodeByte 将string类型的编码转变成可写入文件的[]byte
 func ConvertCodeStringToCodeByte(bc <-chan bool, byteChannelToFile chan<- byte) (paddingLength uint8) {
 	byteLength := uint8(0)
@@ -68,6 +72,7 @@ func ConvertCodeByteToCodeBit(paddingLength uint8, inByteChannel <-chan byte, ou
 		}
 
 	}
+	fmt.Println("3")
 
 }
 
