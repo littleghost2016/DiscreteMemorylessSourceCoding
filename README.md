@@ -7,8 +7,8 @@
 
 # Arithmetic Code - 算数编码
 
-![](https://img.shields.io/badge/writing-yes-yellow)
+![](https://img.shields.io/badge/start-no-red)
 
 # Lempel-Ziv Code - LZ编码
 
-![](https://img.shields.io/badge/start-no-red)
+![](https://img.shields.io/badge/writing-yes-red)
