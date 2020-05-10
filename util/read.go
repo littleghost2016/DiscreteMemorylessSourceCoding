@@ -6,6 +6,7 @@ import (
 	"os"
 )
 
+// ReadFromFile 从文件读取
 func ReadFromFile(filePath string) (fileContent []byte) {
 
 	fileContent, err := ioutil.ReadFile(filePath)
@@ -47,6 +48,7 @@ func ReadCodeNumber(byteChannel <-chan byte) (codeNumber uint8) {
 	return
 }
 
+// ReadPaddingLength 读取填充长度
 func ReadPaddingLength(byteChannel <-chan byte) (paddingLength uint8) {
 	paddingLength = <-byteChannel
 	return

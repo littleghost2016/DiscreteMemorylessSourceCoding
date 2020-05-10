@@ -19,14 +19,14 @@ func WriteByteToFile(filePath string, byteChannel <-chan byte) {
 	// 使用buffer时
 	binBuffer := new(bytes.Buffer)
 
-	for eachByteSlice := range byteChannel {
+	for eachByte := range byteChannel {
 		// fmt.Println(eachByteSlice)
-		binBuffer.WriteByte(eachByteSlice)
+		binBuffer.WriteByte(eachByte)
 	}
 	fileObject.Write(binBuffer.Bytes())
 }
 
-// 写二进制文件标志
+// WriteFlag 写二进制文件标志
 func WriteFlag(encodeType uint8, byteChannelToFile chan<- byte) {
 
 	byteChannelToFile <- 0x19
@@ -45,6 +45,20 @@ func WriteFlag(encodeType uint8, byteChannelToFile chan<- byte) {
 	}
 }
 
+// WritePaddingLength 写填充长度
 func WritePaddingLength(pl uint8, byteChannelToFile chan<- byte) {
 	byteChannelToFile <- pl
+}
+
+func WriteByteSliceToFile(filePath string, in []byte) {
+
+	fileObject, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0644)
+	if err != nil {
+		fmt.Println(err, "WriteEncodedBinaryFile function failed.")
+	}
+
+	defer fileObject.Close()
+
+	fileObject.Write(in)
+
 }

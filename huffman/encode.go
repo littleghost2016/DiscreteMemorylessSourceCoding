@@ -27,18 +27,15 @@ func EncodeHandler(filePath string, textByteSlice []byte) {
 	// 仅做测试用
 	// PrintTreeMap(treeNodeMap)
 
-	// 此处用[]byte想为以后可能的编码非ASCII码做准备
-	// 如只用做ASCII编码，[]byte可改为byte
-	// 是否可以不改而直接适应非ASCII编码还未测试
 	byteChannelToFile := make(chan byte, 64)
 
-	// 写二进制文件
+	// 准备二进制文件所需的数据
 	go writeBinaryFile(treeNodeMap, characterFrequencyMap, textByteSlice, byteChannelToFile)
 
+	// 构造输出文件名
 	binaryFileName := fmt.Sprintf("%s.bin", filePath)
 	fmt.Println("binaryFileName", binaryFileName)
 	util.WriteByteToFile(binaryFileName, byteChannelToFile)
-
 }
 
 func encodeTextFromTreeNodeMap(text []byte, tnm map[byte]*TreeNode, bc chan<- bool) {

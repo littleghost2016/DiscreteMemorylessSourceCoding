@@ -32,6 +32,7 @@ func GenerateHuffmanTree(treeNodeMap map[byte]*TreeNode) (rootNode *TreeNode) {
 	//  fmt.Println(k, v)
 	// }
 
+	// 转换成Slice便于排序
 	tns := treeNodeMapToTreeNodeSlice(treeNodeMap)
 	// 排序，当排序完成后，出现次数小的在前面
 	// 出现次数相同时，ASCII码小的排在前面
@@ -47,17 +48,18 @@ func GenerateHuffmanTree(treeNodeMap map[byte]*TreeNode) (rootNode *TreeNode) {
 
 	for len(tns) != 1 {
 		tempNode := TreeNode{
-			Character:  0,
-			Weight:     tns[0].Weight + tns[1].Weight,
-			LNode:      tns[0],
+			Character:  0,                             // 非叶节点均为0
+			Weight:     tns[0].Weight + tns[1].Weight, // 合并权重最小的两个节点
+			LNode:      tns[0],                        // 默认左节点权重比右边小，若权重相等，则默认左节点的ASCII值比右节点小
 			RNode:      tns[1],
 			FNode:      nil,
 			Code:       "",
 			IsLeafNode: false,
 		}
-		tns[0].FNode = &tempNode
+		tns[0].FNode = &tempNode // 注意取地址
 		tns[1].FNode = tns[0].FNode
-		tns = append(tns[2:], &tempNode)
+		tns = append(tns[2:], &tempNode) // 新节点添加进切片，并删除已经被合并的两个权重最小的两个节点
+		// 再次排序
 		sort.Sort(TreeNodeSlice(tns))
 	}
 
@@ -101,6 +103,7 @@ func treeNodeMapToTreeNodeSlice(tnm map[byte]*TreeNode) (trs []*TreeNode) {
 	return
 }
 
+// distributeCode 根据霍夫曼树递归分配节点的编码
 func distributeCode(node *TreeNode) {
 	if node.LNode != nil {
 		node.LNode.Code = fmt.Sprintf("%s%d", node.Code, 0)
