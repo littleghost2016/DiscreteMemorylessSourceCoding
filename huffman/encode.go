@@ -85,6 +85,7 @@ func calculatePaddingLength(tnm map[byte]*TreeNode, cfm map[byte]uint32) (paddin
 	for k, v := range cfm {
 		lastByteValidCodeLength += uint8(len(tnm[k].Code) * int(v))
 	}
+	// 注意此处两次模8，如果没有后面的一次，则可能算出来paddingLength为8，本来这时候不用再进行任何填充，但8表示又填了一个byte
 	paddingLength = (8 - (lastByteValidCodeLength % 8)) % 8
 	return
 }
@@ -98,7 +99,7 @@ func writeCodeNumber(tnm map[byte]*TreeNode, byteChannelToFile chan<- byte) {
 func writeCode(tbs []byte, tnm map[byte]*TreeNode, byteChannelToFile chan<- byte, calculatedPaddingLength uint8) {
 	bitChannel := make(chan bool, int(math.Pow(2, 16)))
 	go encodeTextFromTreeNodeMap(tbs, tnm, bitChannel)
-	operatedPaddingLength := util.ConvertCodeStringToCodeByte(bitChannel, byteChannelToFile)
+	operatedPaddingLength := util.ConvertCodeBitToCodeByte(bitChannel, byteChannelToFile)
 	if calculatedPaddingLength != operatedPaddingLength {
 		fmt.Println(calculatedPaddingLength, operatedPaddingLength)
 		fmt.Println("calculatePaddingLength != operatedPaddingLength")
