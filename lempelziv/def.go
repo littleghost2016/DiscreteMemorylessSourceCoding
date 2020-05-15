@@ -3,6 +3,7 @@ package lempelziv
 type DecodingDirectoryNode struct {
 	Type                uint8  `json:"type"`
 	Character           []byte `json:"character"`
+	SelfSegmentNubmer   int    `json:"selfsegmentnumber"`
 	SegmentNumber       int    `json:"segmentnumber"`
 	LastCharacterNumber uint8  `json:"lastcharacternumber"`
 	Code                string `json:"code"`

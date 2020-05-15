@@ -2,7 +2,6 @@ package lempelziv
 
 import (
 	"DiscreteMemorylessSourceCoding/util"
-	"bytes"
 	"fmt"
 	"math"
 	"os"
@@ -15,13 +14,23 @@ func EncodeHandler(filePath string, textByteSlice []byte) {
 		os.Exit(1)
 	}
 
-	// 注意：decodingDirectorySlice是译码表，所有从文中统计出来的不同段是从1开始索引的，即第0个虽然没有直接写在slice里，
-	// 但默认单个字符的SegmentNumber为0，其余SegmentNumber从1开始（本身所在的索引+1）
-	// singleCharacterDirectorySlice就是单个字符字典，其CharacterNubmer与本身的索引值相等
+	// decodingDirectorySlice, singleCharacterDirectorySlice, decodingDirectory, singleCharacterDirectory, lastIsSpecialFlag := generateDecodingDirectoryAndSingleCharacterDirectory(textByteSlice)
+	decodingDirectorySlice, singleCharacterDirectorySlice, _, _, lastIsSpecialFlag := generateDecodingDirectoryAndSingleCharacterDirectory(textByteSlice)
 
-	// 注意：此处lastIsSpecialFlag若为true表明，decodingDirectorySlice最后一个元素无法再组成新的段，只能使用前面的segmentNumber，其lastCharacterNumber无效
-	// 即segmentNumber起作用，lastCharacterNumber无作用
-	decodingDirectorySlice, singleCharacterDirectorySlice, lastIsSpecialFlag := generateDecodingDirectorySliceAndSingleCharacterDirectorySlice(textByteSlice)
+	// for _, each := range decodingDirectorySlice {
+	// 	fmt.Println(1, each)
+	// }
+	// for _, each := range singleCharacterDirectorySlice {
+	// 	fmt.Println(2, each)
+	// }
+	// for _, each := range decodingDirectory {
+	// 	// fmt.Println(31, len(decodingDirectory))
+	// 	fmt.Println(3, each)
+	// }
+	// for _, each := range singleCharacterDirectory {
+	// 	fmt.Println(4, each)
+	// }
+	// fmt.Println(lastIsSpecialFlag)
 
 	decodingDirectoryLength := calculateBinaryDigitsNumber(len(decodingDirectorySlice))
 	singleCharacterDirectoryLength := calculateBinaryDigitsNumber(len(singleCharacterDirectorySlice))
@@ -30,7 +39,7 @@ func EncodeHandler(filePath string, textByteSlice []byte) {
 
 	outputByteChannel := make(chan byte, 64)
 
-	// // 准备二进制文件所需的数据
+	// 准备二进制文件所需的数据
 	go WriteBinaryToFile(decodingDirectorySlice, singleCharacterDirectorySlice, decodingDirectoryLength, singleCharacterDirectoryLength, lastIsSpecialFlag, outputByteChannel)
 
 	// 构造输出文件名
@@ -39,81 +48,88 @@ func EncodeHandler(filePath string, textByteSlice []byte) {
 	util.WriteByteToFile(binaryFileName, outputByteChannel)
 }
 
-func generateDecodingDirectorySliceAndSingleCharacterDirectorySlice(fileContent []byte) (decodingDirectorySlice []*DecodingDirectoryNode, singleCharacterDirectorySlice []*SingleCharacterDirectoryNode, lastIsSpecialFlag bool) {
+func generateDecodingDirectoryAndSingleCharacterDirectory(fileContent []byte) (decodingDirectorySlice []*DecodingDirectoryNode, singleCharacterDirectorySlice []*SingleCharacterDirectoryNode, decodingDirectory map[string]*DecodingDirectoryNode, singleCharacterDirectory map[byte]*SingleCharacterDirectoryNode, lastIsSpecialFlag bool) {
+
+	decodingDirectory = make(map[string]*DecodingDirectoryNode)
+	singleCharacterDirectory = make(map[byte]*SingleCharacterDirectoryNode)
 
 	tempDecodingDirectoryCharacterByteSlice := []byte{}
 	// tempSingleCharacterDirectoryNode
 
 	var tempSegmentNumber int = 0
+	var decodingDirectorySliceIndex int = 0
 	var singleCharacterDirectorySliceIndex uint8 = 0
 
 	lastIsSpecialFlag = false
 
 	for _, eachTextByte := range fileContent {
 
-		// 处理singleCharacterDirectorySlice的生成
-		singleCharacterExistFlag := false
-		for _, each := range singleCharacterDirectorySlice {
-			if eachTextByte == each.Character {
-				singleCharacterExistFlag = true
-				break
-			}
-		}
 		// 在singleCharacterDirectorySlice里，如果不存在则加入
-		if !singleCharacterExistFlag {
+		if _, ok := singleCharacterDirectory[eachTextByte]; !ok {
 			tempSingleCharacterDirectoryNode := SingleCharacterDirectoryNode{
 				Type:            1,
 				Character:       eachTextByte,
 				CharacterNubmer: singleCharacterDirectorySliceIndex,
 			}
+			singleCharacterDirectory[eachTextByte] = &tempSingleCharacterDirectoryNode
 			singleCharacterDirectorySlice = append(singleCharacterDirectorySlice, &tempSingleCharacterDirectoryNode)
 			singleCharacterDirectorySliceIndex++
 		}
 
 		// 处理decodingDirectorySlice的生成
+		tempDecodingDirectoryCharacterByteSliceWithoutThelastOne := tempDecodingDirectoryCharacterByteSlice[:]
 		tempDecodingDirectoryCharacterByteSlice = append(tempDecodingDirectoryCharacterByteSlice, eachTextByte)
-		characterNodeExistFlag := false
-		for index, eachCharacterNode := range decodingDirectorySlice {
-			if bytes.Equal(tempDecodingDirectoryCharacterByteSlice, eachCharacterNode.Character) {
-				characterNodeExistFlag = true
-				// if len(tempSegmentNumber)
-				tempSegmentNumber = index + 1
-				break
-			}
-		}
 
-		// 在decodingDirectorySlice里，如果不存在则加入
-		if !characterNodeExistFlag {
+		tempKey := fmt.Sprintf("%s", tempDecodingDirectoryCharacterByteSlice)
+		// fmt.Printf("%s, %T\n", tempDecodingDirectoryCharacterByteSlice, tempDecodingDirectoryCharacterByteSlice)
+		// for _, each := range decodingDirectorySlice {
+		// 	fmt.Println(each)
+		// }
+		// fmt.Println()
 
+		// _, ok := decodingDirectory[tempKey]
+		// fmt.Println(ok, decodingDirectory)
+		if _, ok := decodingDirectory[tempKey]; !ok {
+
+			// 在decodingDirectorySlice里，如果不存在则加入
 			if len(tempDecodingDirectoryCharacterByteSlice) == 1 {
 				tempSegmentNumber = 0
+			} else {
+				// fmt.Println(tempDecodingDirectoryCharacterByteSlice[:len(tempDecodingDirectoryCharacterByteSlice)-1])
+				tempKey1 := fmt.Sprintf("%s", tempDecodingDirectoryCharacterByteSliceWithoutThelastOne)
+				// fmt.Println("---", tempKey)
+				tempSegmentNumber = decodingDirectory[tempKey1].SelfSegmentNubmer
 			}
 
-			var tempLastCharacterNumber uint8
-
-			for index, each := range singleCharacterDirectorySlice {
-				if eachTextByte == each.Character {
-					tempLastCharacterNumber = uint8(index)
-					break
-				}
-			}
+			tempLastCharacterNumber := singleCharacterDirectory[eachTextByte].CharacterNubmer
 
 			tempCharacterNode := DecodingDirectoryNode{
 				Type:                0,
 				Character:           tempDecodingDirectoryCharacterByteSlice,
+				SelfSegmentNubmer:   decodingDirectorySliceIndex + 1,
 				SegmentNumber:       tempSegmentNumber,
 				LastCharacterNumber: tempLastCharacterNumber,
 			}
+			// fmt.Println(tempKey)
+			decodingDirectory[tempKey] = &tempCharacterNode
 			decodingDirectorySlice = append(decodingDirectorySlice, &tempCharacterNode)
-
+			decodingDirectorySliceIndex++
+			// time.Sleep(time.Second)
+			// time.Sleep(1000 * time.Microsecond)
 			tempDecodingDirectoryCharacterByteSlice = []byte{}
 		}
 	}
 
 	if len(tempDecodingDirectoryCharacterByteSlice) != 0 {
+
+		tempKey := fmt.Sprintf("%s", tempDecodingDirectoryCharacterByteSlice)
+		// fmt.Println("---", tempKey)
+		tempSegmentNumber = decodingDirectory[tempKey].SelfSegmentNubmer
+
 		tempCharacterNode := DecodingDirectoryNode{
 			Type:                0,
 			Character:           tempDecodingDirectoryCharacterByteSlice,
+			SelfSegmentNubmer:   decodingDirectorySliceIndex + 1,
 			SegmentNumber:       tempSegmentNumber,
 			LastCharacterNumber: 0,
 		}
