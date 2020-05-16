@@ -11,4 +11,4 @@
 
 # Lempel-Ziv Code - LZ编码
 
-![](https://img.shields.io/badge/writing-yes-yellow)
+![](https://img.shields.io/badge/usable-yes-green)
