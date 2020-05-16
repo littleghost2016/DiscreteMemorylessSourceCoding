@@ -1,6 +1,6 @@
 package huffman
 
-// TreeNode 树节点
+// TreeNode 树节点定义
 type TreeNode struct {
 	Character  byte      `json:"character"`  // 字母
 	Weight     uint32    `json:"weight"`     // 权重

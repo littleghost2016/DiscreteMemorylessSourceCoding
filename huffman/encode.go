@@ -27,18 +27,15 @@ func EncodeHandler(filePath string, textByteSlice []byte) {
 	// 仅做测试用
 	// PrintTreeMap(treeNodeMap)
 
-	// 此处用[]byte想为以后可能的编码非ASCII码做准备
-	// 如只用做ASCII编码，[]byte可改为byte
-	// 是否可以不改而直接适应非ASCII编码还未测试
 	byteChannelToFile := make(chan byte, 64)
 
-	// 写二进制文件
+	// 准备二进制文件所需的数据
 	go writeBinaryFile(treeNodeMap, characterFrequencyMap, textByteSlice, byteChannelToFile)
 
+	// 构造输出文件名
 	binaryFileName := fmt.Sprintf("%s.bin", filePath)
 	fmt.Println("binaryFileName", binaryFileName)
 	util.WriteByteToFile(binaryFileName, byteChannelToFile)
-
 }
 
 func encodeTextFromTreeNodeMap(text []byte, tnm map[byte]*TreeNode, bc chan<- bool) {
@@ -88,6 +85,7 @@ func calculatePaddingLength(tnm map[byte]*TreeNode, cfm map[byte]uint32) (paddin
 	for k, v := range cfm {
 		lastByteValidCodeLength += uint8(len(tnm[k].Code) * int(v))
 	}
+	// 注意此处两次模8，如果没有后面的一次，则可能算出来paddingLength为8，本来这时候不用再进行任何填充，但8表示又填了一个byte
 	paddingLength = (8 - (lastByteValidCodeLength % 8)) % 8
 	return
 }
@@ -101,7 +99,7 @@ func writeCodeNumber(tnm map[byte]*TreeNode, byteChannelToFile chan<- byte) {
 func writeCode(tbs []byte, tnm map[byte]*TreeNode, byteChannelToFile chan<- byte, calculatedPaddingLength uint8) {
 	bitChannel := make(chan bool, int(math.Pow(2, 16)))
 	go encodeTextFromTreeNodeMap(tbs, tnm, bitChannel)
-	operatedPaddingLength := util.ConvertCodeStringToCodeByte(bitChannel, byteChannelToFile)
+	operatedPaddingLength := util.ConvertCodeBitToCodeByte(bitChannel, byteChannelToFile)
 	if calculatedPaddingLength != operatedPaddingLength {
 		fmt.Println(calculatedPaddingLength, operatedPaddingLength)
 		fmt.Println("calculatePaddingLength != operatedPaddingLength")

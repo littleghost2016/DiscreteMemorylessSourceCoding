@@ -6,7 +6,7 @@ import (
 	"math"
 )
 
-// DecodeHandler ...
+// DecodeHandler 译码过程
 func DecodeHandler(filePath string, fileContent []byte) {
 
 	byteChannelFromBinaryFile := make(chan byte, 1024)
@@ -35,20 +35,23 @@ func DecodeHandler(filePath string, fileContent []byte) {
 	// 仅做测试用
 	// PrintTreeMap(treeNodeMap)
 
+	// 获得填充长度
 	paddingLength := util.ReadPaddingLength(byteChannelFromBinaryFile)
 	fmt.Println("paddingLength", paddingLength)
 
 	bitChannel := make(chan bool, int(math.Pow(2, 16)))
 
+	// 读取编码文件的编码部分
 	go util.ConvertCodeByteToCodeBit(paddingLength, byteChannelFromBinaryFile, bitChannel)
 
 	byteChannelToTextFile := make(chan byte, 1024)
 
+	// 译码
 	go decodeTextFromTreeNodeMap(rootNode, bitChannel, byteChannelToTextFile)
 
 	fmt.Println("filePath", filePath)
+	// 译码内容写入文件
 	util.WriteByteToFile(filePath, byteChannelToTextFile)
-
 }
 
 func readCodeFrequencyAndGenerateCharacterFrequencyMap(codeNumber uint8, byteChannel <-chan byte) (cfm map[byte]uint32) {
@@ -81,14 +84,18 @@ func readCodeFrequencyAndGenerateCharacterFrequencyMap(codeNumber uint8, byteCha
 	return
 }
 
+// 根据霍夫曼树将比特流译码成字符
 func decodeTextFromTreeNodeMap(rootNode *TreeNode, bitChannel <-chan bool, byteChannel chan<- byte) {
 	currentNode := rootNode
 	for each := range bitChannel {
 		if each == false {
+			// 0则进入左子树
 			currentNode = currentNode.LNode
 		} else {
+			// 1则进入右子树
 			currentNode = currentNode.RNode
 		}
+		// 若是叶节点则输出字符
 		if currentNode.IsLeafNode {
 			byteChannel <- currentNode.Character
 			// fmt.Println(currentNode.Character)
