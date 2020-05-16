@@ -50,7 +50,13 @@ func readSingleCharacterDirectory(codeNumber uint8, byteChannelFromBinaryFile <-
 	singleCharacterDirectory = make(map[byte]*SingleCharacterDirectoryNode)
 
 	var singleCharacterDirectorySliceIndex uint8 = 0
-	for i := uint8(0); i < codeNumber; i++ {
+	var loopNumber int
+	if codeNumber == 0 {
+		loopNumber = 256
+	} else {
+		loopNumber = int(codeNumber)
+	}
+	for i := 0; i < loopNumber; i++ {
 		eachTextByte := <-byteChannelFromBinaryFile
 		// 在singleCharacterDirectorySlice里，如果不存在则加入
 		if _, ok := singleCharacterDirectory[eachTextByte]; !ok {
