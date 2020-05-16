@@ -24,7 +24,6 @@ func EncodeHandler(filePath string, textByteSlice []byte) {
 	// 	fmt.Println(2, each)
 	// }
 	// for _, each := range decodingDirectory {
-	// 	// fmt.Println(31, len(decodingDirectory))
 	// 	fmt.Println(3, each)
 	// }
 	// for _, each := range singleCharacterDirectory {
@@ -142,9 +141,10 @@ func generateDecodingDirectoryAndSingleCharacterDirectory(fileContent []byte) (d
 
 func calculateBinaryDigitsNumber(length int) (binaryDigitsNumber uint8) {
 
+	// fmt.Println(length)
 	limit := 1
 	binaryDigitsNumber = 1
-	for limit < length {
+	for limit < length-1 {
 		limit = (limit << 1) + 1
 		binaryDigitsNumber++
 	}
@@ -162,10 +162,10 @@ func WriteBinaryToFile(decodingDirectorySlice []*DecodingDirectoryNode, singleCh
 	writeSingleCharacterDirectory(singleCharacterDirectorySlice, outputByteChannel)
 	writeDecodingDirectoryLength(decodingDirectoryLength, outputByteChannel)
 	writeSingleCharacterDirectoryLength(singleCharacterDirectoryLength, outputByteChannel)
+	wirteLastIsSpecialFlag(lastIsSpecialFlag, outputByteChannel)
 	calculatedPaddingLength := calculatePaddingLength(len(decodingDirectorySlice), decodingDirectoryLength, singleCharacterDirectoryLength)
 	// fmt.Println("calculatedPaddingLength", calculatedPaddingLength)
 	writePaddingLength(calculatedPaddingLength, outputByteChannel)
-	wirteLastIsSpecialFlag(lastIsSpecialFlag, outputByteChannel)
 
 	writeCode(decodingDirectorySlice, decodingDirectoryLength, singleCharacterDirectoryLength, calculatedPaddingLength, outputByteChannel)
 

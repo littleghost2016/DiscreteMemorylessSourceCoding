@@ -44,7 +44,7 @@ func ReadCodeType(in byte) (codeType uint8) {
 // ReadCodeNumber 读取被编码的字符个数
 func ReadCodeNumber(byteChannel <-chan byte) (codeNumber uint8) {
 	codeNumber = <-byteChannel
-	fmt.Println("code number", codeNumber)
+	// fmt.Println("code number", codeNumber)
 	return
 }
 

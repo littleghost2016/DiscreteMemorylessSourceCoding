@@ -20,7 +20,7 @@ func WriteByteToFile(filePath string, byteChannel <-chan byte) {
 	binBuffer := new(bytes.Buffer)
 
 	for eachByte := range byteChannel {
-		// fmt.Println(eachByteSlice)
+		// fmt.Println(eachByte)
 		binBuffer.WriteByte(eachByte)
 	}
 	fileObject.Write(binBuffer.Bytes())

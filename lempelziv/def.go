@@ -15,3 +15,8 @@ type SingleCharacterDirectoryNode struct {
 	CharacterNubmer uint8  `json:"characternubmer"`
 	Code            string `json:"code"`
 }
+
+type TempWaitingToBeSendNode struct {
+	TempSegmentNumber       uint32 `json:"tempsegmentnumber"`
+	TempLastCharacterNumber uint8  `json:"templastcharacternumber"`
+}
