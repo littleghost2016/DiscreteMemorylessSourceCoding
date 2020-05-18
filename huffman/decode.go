@@ -58,29 +58,25 @@ func readCodeFrequencyAndGenerateCharacterFrequencyMap(codeNumber uint8, byteCha
 
 	cfm = make(map[byte]uint32)
 
+	var loopNumber uint16
+	// 当为0时，说明有256个字符需要计入统计
 	if codeNumber != 0 {
-		for i := uint8(0); i < codeNumber; i++ {
-			character := <-byteChannel
-			var frequencyArray [4]byte
-			for j := uint(0); j < 4; j++ {
-				frequencyArray[j] = <-byteChannel
-			}
-			// fmt.Println(frequencyArray)
-			frequencyInt := util.Couvert4ByteArrayToUint32(frequencyArray)
-			cfm[character] = frequencyInt
-		}
+		loopNumber = uint16(codeNumber)
 	} else {
-		for i := uint16(0); i < 256; i++ {
-			character := <-byteChannel
-			var frequencyArray [4]byte
-			for j := uint(0); j < 4; j++ {
-				frequencyArray[j] = <-byteChannel
-			}
-			// fmt.Println(frequencyArray)
-			frequencyInt := util.Couvert4ByteArrayToUint32(frequencyArray)
-			cfm[character] = frequencyInt
-		}
+		loopNumber = uint16(256)
 	}
+
+	for i := uint16(0); i < loopNumber; i++ {
+		character := <-byteChannel
+		var frequencyArray [4]byte
+		for j := uint(0); j < 4; j++ {
+			frequencyArray[j] = <-byteChannel
+		}
+		// fmt.Println(frequencyArray)
+		frequencyInt := util.Couvert4ByteArrayToUint32(frequencyArray)
+		cfm[character] = frequencyInt
+	}
+
 	return
 }
 

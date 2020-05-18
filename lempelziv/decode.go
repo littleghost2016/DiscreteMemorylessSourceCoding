@@ -247,7 +247,7 @@ func convertDecimalToCharacterAndSendToChannel(tempSegmentNumber uint32, tempLas
 	} else {
 		// 注意此处应重新申请地址，为下面的copy做准备
 		// 若不重新申请，则tempSegmentCharacter的地址均为(*decodingDirectorySlice)[tempSegmentNumber-1].Character的地址
-		// 即只想同意切片，后续的修改会更改前面的，这个BUG排查了我一个晚上+第二天的一个上午....
+		// 即指向同一切片，后续的修改会更改前面的，这个BUG排查了我一个晚上+第二天的一个上午....
 		// (*decodingDirectorySlice)要加括号，表示优先运算*
 		tempSegmentCharacter = make([]byte, len((*decodingDirectorySlice)[tempSegmentNumber-1].Character))
 
