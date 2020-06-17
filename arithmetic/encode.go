@@ -157,7 +157,7 @@ func writeCode(textByteSlice []byte, characterMap map[byte]*CharacterNode, byteC
 			}
 
 		} else {
-			for i := 2; i < lowByteSliceLength; i++ {
+			for i := 2; i < highByteSliceLength; i++ {
 				if highByteSlice[i] == lowByteSlice[i] {
 					finalCodeByteSlice = append(finalCodeByteSlice, highByteSlice[i])
 				} else {

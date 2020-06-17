@@ -178,7 +178,7 @@ func decodeTextFromFinalCodeNumber(totalTextByteNumber int, finalCodeNumber deci
 				}
 			}
 		} else {
-			for i := 2; i < lowByteSliceLength; i++ {
+			for i := 2; i < highByteSliceLength; i++ {
 				if highByteSlice[i] != lowByteSlice[i] {
 					truncatePosition = i - 2
 					break
