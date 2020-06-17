@@ -68,6 +68,12 @@ func writeBinaryFile(tnm map[byte]*TreeNode, cfm map[byte]uint32, tbs []byte, by
 	writeCode(tbs, tnm, byteChannelToFile, paddingLength)
 }
 
+func writeCodeNumber(tnm map[byte]*TreeNode, byteChannelToFile chan<- byte) {
+	codeNumber := uint8(len(tnm)) // 类型转换原因同上
+
+	byteChannelToFile <- codeNumber
+}
+
 func writeCodeMap(cfm map[byte]uint32, byteChannelToFile chan<- byte) {
 
 	for k, v := range cfm {
@@ -88,12 +94,6 @@ func calculatePaddingLength(tnm map[byte]*TreeNode, cfm map[byte]uint32) (paddin
 	// 注意此处两次模8，如果没有后面的一次，则可能算出来paddingLength为8，本来这时候不用再进行任何填充，但8表示又填了一个byte
 	paddingLength = (8 - (lastByteValidCodeLength % 8)) % 8
 	return
-}
-
-func writeCodeNumber(tnm map[byte]*TreeNode, byteChannelToFile chan<- byte) {
-	codeNumber := uint8(len(tnm)) // 类型转换原因同上
-
-	byteChannelToFile <- codeNumber
 }
 
 func writeCode(tbs []byte, tnm map[byte]*TreeNode, byteChannelToFile chan<- byte, calculatedPaddingLength uint8) {

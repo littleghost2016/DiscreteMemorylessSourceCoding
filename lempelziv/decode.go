@@ -90,7 +90,7 @@ func readLastCharacterLength(byteChannelFromBinaryFile <-chan byte) (lastCharact
 
 func readLastIsSpecialFlag(byteChannelFromBinaryFile <-chan byte) (lastIsSpecialFlag bool) {
 
-	// TODO: 判断接收到是0还是1
+	// 判断接收到是0还是1
 	receivedBit := <-byteChannelFromBinaryFile
 	if receivedBit == 0x00 {
 		lastIsSpecialFlag = false

@@ -12,12 +12,12 @@ func DecodeHandler(filePath string, fileContent []byte) {
 	byteChannelFromBinaryFile := make(chan byte, 1024)
 
 	// 读取文件
-	go func(byteChannelFromBinaryFile chan<- byte) {
+	go func() {
 		for _, eachByte := range fileContent {
 			byteChannelFromBinaryFile <- eachByte
 		}
 		close(byteChannelFromBinaryFile)
-	}(byteChannelFromBinaryFile)
+	}()
 
 	codeNumber := util.ReadCodeNumber(byteChannelFromBinaryFile)
 	characterFrequencyMap := readCodeFrequencyAndGenerateCharacterFrequencyMap(codeNumber, byteChannelFromBinaryFile)

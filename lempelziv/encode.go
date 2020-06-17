@@ -17,20 +17,6 @@ func EncodeHandler(filePath string, textByteSlice []byte) {
 	// decodingDirectorySlice, singleCharacterDirectorySlice, decodingDirectory, singleCharacterDirectory, lastIsSpecialFlag := generateDecodingDirectoryAndSingleCharacterDirectory(textByteSlice)
 	decodingDirectorySlice, singleCharacterDirectorySlice, _, _, lastIsSpecialFlag := generateDecodingDirectoryAndSingleCharacterDirectory(textByteSlice)
 
-	// for _, each := range decodingDirectorySlice {
-	// 	fmt.Println(1, each)
-	// }
-	// for _, each := range singleCharacterDirectorySlice {
-	// 	fmt.Println(2, each)
-	// }
-	// for _, each := range decodingDirectory {
-	// 	fmt.Println(3, each)
-	// }
-	// for _, each := range singleCharacterDirectory {
-	// 	fmt.Println(4, each)
-	// }
-	// fmt.Println(lastIsSpecialFlag)
-
 	decodingDirectoryLength := calculateBinaryDigitsNumber(len(decodingDirectorySlice))
 	singleCharacterDirectoryLength := calculateBinaryDigitsNumber(len(singleCharacterDirectorySlice))
 
@@ -80,23 +66,14 @@ func generateDecodingDirectoryAndSingleCharacterDirectory(fileContent []byte) (d
 		tempDecodingDirectoryCharacterByteSlice = append(tempDecodingDirectoryCharacterByteSlice, eachTextByte)
 
 		tempKey := fmt.Sprintf("%s", tempDecodingDirectoryCharacterByteSlice)
-		// fmt.Printf("%s, %T\n", tempDecodingDirectoryCharacterByteSlice, tempDecodingDirectoryCharacterByteSlice)
-		// for _, each := range decodingDirectorySlice {
-		// 	fmt.Println(each)
-		// }
-		// fmt.Println()
 
-		// _, ok := decodingDirectory[tempKey]
-		// fmt.Println(ok, decodingDirectory)
 		if _, ok := decodingDirectory[tempKey]; !ok {
 
 			// 在decodingDirectorySlice里，如果不存在则加入
 			if len(tempDecodingDirectoryCharacterByteSlice) == 1 {
 				tempSegmentNumber = 0
 			} else {
-				// fmt.Println(tempDecodingDirectoryCharacterByteSlice[:len(tempDecodingDirectoryCharacterByteSlice)-1])
 				tempKey1 := fmt.Sprintf("%s", tempDecodingDirectoryCharacterByteSliceWithoutThelastOne)
-				// fmt.Println("---", tempKey)
 				tempSegmentNumber = decodingDirectory[tempKey1].SelfSegmentNubmer
 			}
 
@@ -109,12 +86,9 @@ func generateDecodingDirectoryAndSingleCharacterDirectory(fileContent []byte) (d
 				SegmentNumber:       tempSegmentNumber,
 				LastCharacterNumber: tempLastCharacterNumber,
 			}
-			// fmt.Println(tempKey)
 			decodingDirectory[tempKey] = &tempCharacterNode
 			decodingDirectorySlice = append(decodingDirectorySlice, &tempCharacterNode)
 			decodingDirectorySliceIndex++
-			// time.Sleep(time.Second)
-			// time.Sleep(1000 * time.Microsecond)
 			tempDecodingDirectoryCharacterByteSlice = []byte{}
 		}
 	}
@@ -183,25 +157,18 @@ func writeCode(decodingDirectorySlice []*DecodingDirectoryNode, decodingDirector
 			for i := decodingDirectoryLength; i > 0; i-- {
 				if tempBit := each.SegmentNumber & (1 << (i - 1)); tempBit == 0 {
 					bitChannel <- false
-					// fmt.Print(0)
 				} else {
 					bitChannel <- true
-					// fmt.Print(1)
 				}
 			}
-			// fmt.Print("+")
 			// 处理lastCharacterNumber
 			for i := singleCharacterDirectoryLength; i > 0; i-- {
 				if tempBit := each.LastCharacterNumber & (1 << (i - 1)); tempBit == 0 {
 					bitChannel <- false
-					// fmt.Print(0)
 				} else {
 					bitChannel <- true
-					// fmt.Print(1)
 				}
 			}
-			// fmt.Println()
-			// time.Sleep(1 * time.Second)
 		}
 		close(bitChannel)
 	}()
