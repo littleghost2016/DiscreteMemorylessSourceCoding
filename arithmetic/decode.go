@@ -153,6 +153,9 @@ func decodeTextFromFinalCodeNumber(totalTextByteNumber int, finalCodeNumber deci
 	// for _, each := range characterNodeSlice {
 	// 	fmt.Println(each)
 	// }
+
+	fmt.Println(finalCodeNumber)
+
 	for i := 0; i < totalTextByteNumber; i++ {
 
 		zeroDecimal := decimal.Zero
@@ -160,6 +163,28 @@ func decodeTextFromFinalCodeNumber(totalTextByteNumber int, finalCodeNumber deci
 		// fmt.Println("low", low)
 		// fmt.Println(finalCodeNumber)
 		// fmt.Println("high", high)
+
+		// fmt.Println("low", low)
+		// fmt.Println("high", high)
+		for _, eachCharacterNode := range characterNodeSlice {
+			highSubLow := high.Sub(low)
+			tempRight2 := highSubLow.Mul(eachCharacterNode.RightBounded)
+			tempHigh := low.Add(tempRight2)
+
+			tempRight1 := highSubLow.Mul(eachCharacterNode.LeftBounded)
+			tempLow := low.Add(tempRight1)
+
+			// fmt.Println("tempLow", tempLow)
+			// fmt.Println("tempHigh", tempHigh)
+			if finalCodeNumber.GreaterThan(tempLow) && finalCodeNumber.LessThan(tempHigh) {
+				low = tempLow
+				high = tempHigh
+				// fmt.Printf("%c", eachCharacterNode.Character)
+				byteChannelToTextFile <- eachCharacterNode.Character
+				break
+			}
+		}
+
 		lowByteSlice, _ := low.MarshalText()
 		highByteSlice, _ := high.MarshalText()
 		// fmt.Println("lowByteSlice", lowByteSlice)
@@ -190,33 +215,16 @@ func decodeTextFromFinalCodeNumber(totalTextByteNumber int, finalCodeNumber deci
 		if (!low.Equal(zeroDecimal)) || (!high.Equal(oneDecimal)) {
 			lowShifted := low.Shift(int32(truncatePosition))
 			// fmt.Println("lowShifted", lowShifted)
-			low = lowShifted.Sub(lowShifted.Floor()).Truncate(20)
+			low = lowShifted.Sub(lowShifted.Floor()).Truncate(50)
 			// fmt.Println("low-update", low)
 			highShifted := high.Shift(int32(truncatePosition))
 			// fmt.Println("highShifted", highShifted)
-			high = highShifted.Sub(highShifted.Floor()).Truncate(20)
+			high = highShifted.Sub(highShifted.Floor()).Truncate(50)
 			// fmt.Println("high-update", high)
 			finalCodeNumberShifted := finalCodeNumber.Shift(int32(truncatePosition))
-			finalCodeNumber = finalCodeNumberShifted.Sub(finalCodeNumberShifted.Floor()).Truncate(15)
+			finalCodeNumber = finalCodeNumberShifted.Sub(finalCodeNumberShifted.Floor()).Truncate(50)
 		}
 
-		// fmt.Println("low", low)
-		// fmt.Println("high", high)
-		for _, eachCharacterNode := range characterNodeSlice {
-			tempLow := low.Add(eachCharacterNode.LeftBounded.Mul(high.Sub(low)))
-			// fmt.Println("tempLow", tempLow)
-			if finalCodeNumber.GreaterThanOrEqual(tempLow) {
-				tempHigh := low.Add(eachCharacterNode.RightBounded.Mul(high.Sub(low)))
-				// fmt.Println("tempHigh", tempHigh)
-				if finalCodeNumber.LessThanOrEqual(tempHigh) {
-					low = tempLow
-					high = tempHigh
-					// fmt.Printf("%c", eachCharacterNode.Character)
-					byteChannelToTextFile <- eachCharacterNode.Character
-					break
-				}
-			}
-		}
 	}
 	close(byteChannelToTextFile)
 }

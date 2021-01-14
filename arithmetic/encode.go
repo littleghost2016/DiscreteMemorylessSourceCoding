@@ -60,9 +60,9 @@ func EncodeHandler(filePath string, textByteSlice []byte) {
 		eachCharacterNode.RightBounded = tempLeftBounded
 	}
 
-	// for _, each := range characterNodeSlice {
-	// 	fmt.Println(each)
-	// }
+	for _, each := range characterNodeSlice {
+		fmt.Println(each)
+	}
 
 	byteChannelToFile := make(chan byte, 64)
 
@@ -121,22 +121,41 @@ func writeCode(textByteSlice []byte, characterMap map[byte]*CharacterNode, byteC
 	zeroDecimal := decimal.Zero
 	oneDecimal := decimal.NewFromInt(1)
 
-	lowChannel := make(chan decimal.Decimal)
-	highChannel := make(chan decimal.Decimal)
+	// lowChannel := make(chan decimal.Decimal)
+	// highChannel := make(chan decimal.Decimal)
 
 	for _, eachByte := range textByteSlice {
 
 		// fmt.Println("low", low)
 		// fmt.Println("high", high)
-		go func() {
-			lowChannel <- low.Add(characterMap[eachByte].LeftBounded.Mul(high.Sub(low)))
-		}()
-		go func() {
-			highChannel <- low.Add(characterMap[eachByte].RightBounded.Mul(high.Sub(low)))
-		}()
+		// go func() {
+		// 	lowChannel <- low.Add(characterMap[eachByte].LeftBounded.Mul(high.Sub(low)))
+		// }()
+		// go func() {
+		// 	highChannel <- low.Add(characterMap[eachByte].RightBounded.Mul(high.Sub(low)))
+		// }()
 
-		low = <-lowChannel
-		high = <-highChannel
+		// low = <-lowChannel
+		// high = <-highChannel
+
+		highSubLow := high.Sub(low)
+		// fmt.Println("highSubLow", highSubLow)
+
+		tempRight2 := highSubLow.Mul(characterMap[eachByte].RightBounded)
+		// fmt.Println("tempRight2", tempRight2)
+		high = low.Add(tempRight2)
+
+		tempRight1 := highSubLow.Mul(characterMap[eachByte].LeftBounded)
+		// fmt.Println("tempRight1", tempRight1)
+		low = low.Add(tempRight1)
+
+		// high = low.Add(characterMap[eachByte].RightBounded.Mul(high.Sub(low)))
+
+		// fmt.Println(low)
+		// fmt.Println(high)
+
+		// fmt.Println(characterMap[eachByte].LeftBounded.Mul(high.Sub(low)))
+		// fmt.Println(characterMap[eachByte].RightBounded.Mul(high.Sub(low)))
 
 		lowByteSlice, _ := low.MarshalText()
 		highByteSlice, _ := high.MarshalText()
@@ -170,19 +189,17 @@ func writeCode(textByteSlice []byte, characterMap map[byte]*CharacterNode, byteC
 		if (!low.Equal(zeroDecimal)) || (!high.Equal(oneDecimal)) {
 			lowShifted := low.Shift(int32(truncatePosition))
 			// 	// // fmt.Println("lowShifted", lowShifted)
-			low = lowShifted.Sub(lowShifted.Floor()).Truncate(10)
-			// 	// low = low.Truncate(20)
+			low = lowShifted.Sub(lowShifted.Floor()).Truncate(50)
 			highShifted := high.Shift(int32(truncatePosition))
 			// 	// // fmt.Println("highShifted", highShifted)
-			high = highShifted.Sub(highShifted.Floor()).Truncate(10)
-			// 	// high = high.Truncate(20)
+			high = highShifted.Sub(highShifted.Floor()).Truncate(50)
 		}
 	}
 	lastByte, _ := high.MarshalText()
 	finalCodeByteSlice = append(finalCodeByteSlice, lastByte[2])
 
 	// TODO:
-	// fmt.Println(len(finalCodeByteSlice), finalCodeByteSlice)
+	fmt.Println(len(finalCodeByteSlice), finalCodeByteSlice)
 
 	convertDigitalToByte(finalCodeByteSlice, byteChannelToFile)
 }
