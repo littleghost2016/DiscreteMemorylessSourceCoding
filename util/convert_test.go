@@ -35,7 +35,7 @@ func TestConvertCodeStringToCodeByte(t *testing.T) {
 		}
 		close(bc)
 	}()
-	go ConvertCodeStringToCodeByte(bc, bsc)
+	go ConvertCodeBitToCodeByte(bc, bsc)
 
 	// each, ok := <-bsc
 	// t.Log("1", each, ok)
